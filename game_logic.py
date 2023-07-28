@@ -15,6 +15,7 @@ class Game:
         self.nums_board = None
         self.player_board = np.full(self.size, UNEXPLORED)
         self.end_game = False
+        self.game_won = False
         self.first_click = True
         self.mine_poses = []
         self.flag_poses = []
@@ -29,11 +30,11 @@ class Game:
         available_pos_for_mines = [(x, y) for x in range(self.size[0]) for y in range(self.size[1])]
         first_positions = [(x, y)
                            for x in
-                           range(first_click_pos[0] - (self.size[0] + 3) // 4,
-                                 first_click_pos[0] + (self.size[0] + 3) // 4)
+                           range(first_click_pos[0] - 2,
+                                 first_click_pos[0] + 2)
                            for y in
-                           range(first_click_pos[1] - (self.size[1] + 3) // 4,
-                                 first_click_pos[1] + (self.size[1] + 3) // 4)]
+                           range(first_click_pos[1] - 2,
+                                 first_click_pos[1] + 2)]
 
         available_pos_for_mines = [pos for pos in available_pos_for_mines if pos not in first_positions]
         mines_to_be_placed = self.num_of_mines
@@ -134,6 +135,7 @@ class Game:
         if can_win:
             print("You won!!!\n")
             self.end_game = True
+            self.game_won = True
             return
 
 # game = Game((2, 2), 1)
