@@ -57,7 +57,7 @@ def _create_field(game_settings: Settings, screen: pygame.surface.Surface,
     buttons.add(button)
 
 
-def create_fields(game_settings: Settings, screen: pygame.surface.Surface, buttons: Group) -> None:
+def create_game_field(game_settings: Settings, screen: pygame.surface.Surface, buttons: Group) -> None:
     """
         Створює ігрове поле завдяки двох for-циклів.
         Використовує допоміжну функцію _create_button
@@ -76,7 +76,7 @@ def create_fields(game_settings: Settings, screen: pygame.surface.Surface, butto
                           row_number, '0')
 
 
-def change_fields(game_settings: Settings, screen: pygame.surface.Surface, buttons: Group, array_2d: np.ndarray) -> None:
+def change_game_fields(game_settings: Settings, screen: pygame.surface.Surface, buttons: Group, array_2d: np.ndarray) -> None:
     """
         Створює ігрове поле завдяки двох for-циклів.
         Використовує допоміжну функцію _create_button
@@ -158,20 +158,16 @@ def event_handler(buttons: Group, game_settings: Settings, mines_display: Displa
 
 def run_game(game: gl.Game) -> None:
     """
-        Головна функція гри.
+        Main func with game loop
     """
-    # Оптимізовуєм звук гри
+    # Game sound optimization
     pygame.mixer.pre_init(44100, 16, 2, 4096)
 
-
-
-    # Ініціалізація pygame
     pygame.init()
 
-    # Створення об'єкту налаштувань гри
     game_settings = Settings(game.size[0], game.size[1])
 
-    # Налаштовування вікна гри
+    # Game window setup
     environ['SDL_VIDEO_CENTERED'] = '1'
     pygame.display.set_caption('Minesweeper')
     pygame.display.set_icon(pygame.image.load('images/mine.png'))
@@ -183,75 +179,53 @@ def run_game(game: gl.Game) -> None:
         16)
     clock = pygame.time.Clock()
 
-    # Обмежуєм кількість можливих кнопок, які можна натиснути. ОПТИМІЗАЦІЯ
+    # Limit number of possible keys pressed at once
     pygame.event.set_allowed([QUIT, KEYDOWN, KEYUP, K_ESCAPE, MOUSEBUTTONDOWN, MOUSEBUTTONUP])
 
-    # Створення ігрових об'єктів
+    # Creating game objects
     buttons = Group()
 
-    # Створюєм два дисплея: час та кількість мін
     clock_display = Display(game_settings, screen, game_settings.screen_width / 1.5, 20, [0, 0, 0])
     mines_display = Display(game_settings, screen, game_settings.screen_width / 4, 20, [0, 3, 0])
 
-    # Додаєм іконки
     clock_display.change_icon(
         Icon('images/clock.png', screen, game_settings, clock_display.rect1.x - 60, 0))
     mines_display.change_icon(
         Icon('images/mine_32px.png', screen, game_settings, mines_display.rect1.x - 40, mines_display.rect1.y))
 
-    # Створення ігрового поля
-    create_fields(game_settings, screen, buttons)
+    create_game_field(game_settings, screen, buttons)
 
-    # Заповнюєм екран суцільним кольором
     screen.fill(game_settings.bg_color)
-    # Головний цикл
-    while 1:
-        # Обробник подій
+    # Game cycle
+    while True:
         if game.end_game:
             print("Game ended!")
             break
         event_result = event_handler(buttons, game_settings, mines_display)
         if event_result:
             game.do_action(event_result[0], event_result[1])
-            # print(game.player_board)
-            # if event_result[1] == 'o' and first_click:
-            #     game.setup(event_result[0])
-            change_fields(game_settings, screen, buttons, game.player_board)
-                # print(game.nums_board)
-                # first_click = False
+            change_game_fields(game_settings, screen, buttons, game.player_board)
 
-        # Збільшуєм час якщо frame_count кратне frame_rate
+        # Hack to change clock every second
         if game_settings.frame_count % game_settings.frame_rate == 0:
             clock_display.display_plus_one()
 
-        # Оновлюєм дисплеї
+        # Update displays
         clock_display.blit_display()
         mines_display.blit_display()
 
-        # Малюєм ігрове поле
         buttons.draw(screen)
         buttons_hover(buttons)
 
-        # Лічильник кадрів
         game_settings.frame_count += 1
         clock.tick(game_settings.frame_rate)
 
-        # Оновлення екрану
+        # Update game window
         pygame.display.flip()
 
 
-# Запуск гри
+# Play game
 if __name__ == '__main__':
     game_instance = gl.Game((10, 8), 10)
-
-    # while not game.end_game:
-        # print(game.num_of_left_mines())
-        # game.print_board(game.player_board)
-        # game.do_action()
-        # game.print_board(game.game_board)
-        # game.print_board(game.nums_board)
-
-    # game.reveal_player_board()
-
     run_game(game_instance)
 

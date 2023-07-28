@@ -53,7 +53,7 @@ class Game:
             for y, value in enumerate(row):
                 neighbors_board_dict[(x, y)] = neighbors_board_dict.get((x, y), 0)
                 if self.game_board[x, y] == MINE:
-                    neighbors_board_dict[(x, y)] = 9
+                    neighbors_board_dict[(x, y)] = 'mine'
                     continue
                 for i in [x - 1, x, x + 1]:
                     for j in [y - 1, y, y + 1]:
@@ -62,9 +62,9 @@ class Game:
                         if self.game_board[i, j] == MINE:
                             neighbors_board_dict[(x, y)] = neighbors_board_dict.get((x, y)) + 1
 
-        neighbors_list = np.zeros(self.game_board.shape)
+        neighbors_list = np.full(self.game_board.shape, '0')
         for key, value in neighbors_board_dict.items():
-            neighbors_list[key[0], key[1]] = value
+            neighbors_list[key[0], key[1]] = str(value)
         return neighbors_list
 
     def print_board(self, board) -> None:
@@ -80,7 +80,7 @@ class Game:
 
     def expand_empty_cells(self, pos: tuple) -> None:
         (x, y) = pos
-        if self.nums_board[x, y] != 0:
+        if self.nums_board[x, y] != '0':
             return
         for i in [x - 1, x, x + 1]:
             for j in [y - 1, y, y + 1]:
@@ -103,41 +103,31 @@ class Game:
                 self.player_board[x, y] = self.nums_board[x, y]
         self.print_board(self.player_board)
 
-    def do_action(self, cell_choice: tuple, action: str) -> None:
-        # cell_choice = tuple(
-        #     [int(coord) - 1 for coord in input("What cell to choose?(x, y) ").replace(' ', '').split(',')])
-        # action = input("What do you want to do?[open(o)/flag(f)/remove flag(r)] ")
+    def do_action(self, cell_choice_pos: tuple, action: str) -> None:
         if self.first_click:
-            self.setup(cell_choice)
+            self.setup(cell_choice_pos)
             self.first_click = False
 
         if action == 'o':
-            if self.game_board[cell_choice[0], cell_choice[1]] == MINE:
-                # print("You lost!")
+            if self.game_board[cell_choice_pos[0], cell_choice_pos[1]] == MINE:
+                print("You lost!")
                 self.end_game = True
-            elif self.player_board[cell_choice[0], cell_choice[1]] == UNEXPLORED:
-                # print("Cell opened")
-                num_of_near_mines = self.nums_board[cell_choice[0], cell_choice[1]]
-                self.player_board[cell_choice[0], cell_choice[1]] = num_of_near_mines
-                self.expand_empty_cells(cell_choice)
-                self.unexplored_poses.remove(cell_choice)
+            elif self.player_board[cell_choice_pos[0], cell_choice_pos[1]] == UNEXPLORED:
+                num_of_near_mines = self.nums_board[cell_choice_pos[0], cell_choice_pos[1]]
+                self.player_board[cell_choice_pos[0], cell_choice_pos[1]] = num_of_near_mines
+                self.expand_empty_cells(cell_choice_pos)
+                self.unexplored_poses.remove(cell_choice_pos)
         elif action == 'f':
-            self.player_board[cell_choice[0], cell_choice[1]] = FLAG
-            self.flag_poses.append(cell_choice)
-        elif action == 'r' and self.player_board[cell_choice[0], cell_choice[1]] == FLAG:
-            self.player_board[cell_choice[0], cell_choice[1]] = UNEXPLORED
-            self.flag_poses.remove(cell_choice)
-        # else:
-            # print("Wrong action or cell choice!")
+            self.player_board[cell_choice_pos[0], cell_choice_pos[1]] = FLAG
+            self.flag_poses.append(cell_choice_pos)
+        elif action == 'r' and self.player_board[cell_choice_pos[0], cell_choice_pos[1]] == FLAG:
+            self.player_board[cell_choice_pos[0], cell_choice_pos[1]] = UNEXPLORED
+            self.flag_poses.remove(cell_choice_pos)
 
         can_win = True
 
         for mine in self.mine_poses:
-            # if mine not in self.flag_poses:
-            #     can_win = False
-            #     break
             if mine not in self.unexplored_poses or len(self.mine_poses) != len(self.unexplored_poses):
-                print(len(self.mine_poses), len(self.unexplored_poses))
                 can_win = False
                 break
 
@@ -145,3 +135,6 @@ class Game:
             print("You won!!!\n")
             self.end_game = True
             return
+
+# game = Game((2, 2), 1)
+# game.setup()

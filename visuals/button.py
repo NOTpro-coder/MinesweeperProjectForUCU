@@ -38,26 +38,26 @@ class Button(Sprite):
         """
             Зміна зображення кнопки
         """
-        if file_name == '0.0':
-            file_name = '0'
-        if file_name == '1.0':
-            file_name = '1'
-        if file_name == '2.0':
-            file_name = '2'
-        if file_name == '3.0':
-            file_name = '3'
-        if file_name == '4.0':
-            file_name = '4'
-        if file_name == '5.0':
-            file_name = '5'
-        if file_name == '6.0':
-            file_name = '6'
-        if file_name == '7.0':
-            file_name = '7'
-        if file_name == '8.0':
-            file_name = '8'
-        if file_name == '9':
-            file_name = 'mine'
+        # if file_name == '0.0':
+        #     file_name = '0'
+        # if file_name == '1.0':
+        #     file_name = '1'
+        # if file_name == '2.0':
+        #     file_name = '2'
+        # if file_name == '3.0':
+        #     file_name = '3'
+        # if file_name == '4.0':
+        #     file_name = '4'
+        # if file_name == '5.0':
+        #     file_name = '5'
+        # if file_name == '6.0':
+        #     file_name = '6'
+        # if file_name == '7.0':
+        #     file_name = '7'
+        # if file_name == '8.0':
+        #     file_name = '8'
+        # if file_name == '9':
+        #     file_name = 'mine'
 
         self.image = pygame.image.load(f'images/{file_name}.png').convert()
         self.image_name = file_name
