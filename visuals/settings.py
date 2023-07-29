@@ -12,6 +12,8 @@ class Settings:
         self.first_time_play = True
         self.extra_x = extra_x
         self.extra_y = extra_y
+        self.game_won = False
+        self.first_time_won = True
         self.x = x
         self.y = y
         self.button_w = button_w

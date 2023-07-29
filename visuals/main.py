@@ -80,12 +80,12 @@ def change_game_fields(buttons: Group,
 
 
 def _button_keydown(event, buttons: Group, game_settings: Settings, game: gl.Game, mines_display,
-                    begin_game_button: NewGameButton) -> tuple:
+                    begin_game_button: NewGameButton, success_game_button: NewGameButton) -> tuple:
     """
         Обробник помилок для ігрового поля (кнопок)
     """
     if not game_settings.game_active:
-        if begin_game_button.rect.collidepoint(event.pos) or begin_game_button.rect.collidepoint(event.pos):
+        if begin_game_button.rect.collidepoint(event.pos) or success_game_button.rect.collidepoint(event.pos):
             game_settings.game_active = True
             game.end_game = False
     else:
@@ -137,64 +137,69 @@ def buttons_hover(buttons: Group, start_game_buttons: Group):
 
 
 def event_handler(buttons: Group, game_settings: Settings, mines_display: Display, begin_game_button: NewGameButton,
-                  game) -> tuple:
+                  game, success_game_button: NewGameButton) -> tuple:
     """
         Головний обробник помилок у грі
     """
     for event in pygame.event.get():
         if event.type == QUIT:
+            pygame.quit()
             exit()
         elif event.type == MOUSEBUTTONDOWN:
-            return _button_keydown(event, buttons, game_settings, game, mines_display, begin_game_button)
+            return _button_keydown(event, buttons, game_settings, game, mines_display, begin_game_button, success_game_button)
         elif event.type == pygame.MOUSEBUTTONUP:
             pass
         elif event.type == KEYDOWN:
             if event.key == K_ESCAPE:
+                pygame.quit()
                 exit()
 
 
-def load_image():
+def load_image(game: gl.Game):
     # Ініціалізація pygame
     pygame.mixer.pre_init(44100, 16, 2, 4096)
     pygame.init()
     pygame.display.set_caption('Minesweeper')
     pygame.display.set_icon(pygame.image.load('images/mine.png'))
 
-    screen = pygame.display.set_mode((500, 500))
+    game_settings = Settings(game.size[0], game.size[1], game.num_of_mines, 32, 32, 20, 192)
+    flags = DOUBLEBUF | RESIZABLE
+    screen = pygame.display.set_mode((game_settings.screen_width, game_settings.screen_height - game_settings.extra_y / 3), flags, 16)
 
     # Обмежуєм кількість можливих кнопок, які можна натиснути. ОПТИМІЗАЦІЯ
     pygame.event.set_allowed([QUIT, KEYDOWN, KEYUP, K_ESCAPE, MOUSEBUTTONDOWN, MOUSEBUTTONUP])
-    font = pygame.font.SysFont('arial', 12)
+    font = pygame.font.SysFont('arial', 22, bold=True)
     text = 'Перетягніть зображення до екрану, щоб почати розмінування'
-    text_image = font.render(text, True, (0, 0, 0))
+    color_black = (255, 255, 255)
+    text_image = font.render(text, True, color_black)
     text_rect = text_image.get_rect()
-    text_rect.x = 250
-    text_rect.y = 250
+    text_rect.center = (screen.get_width() // 2, screen.get_height() // 2)
+    bg_color = (0, 0, 0)
+
     while 1:
-        screen.fill('#FFFFFF')
+        screen.fill(bg_color)
+        screen.blit(text_image, text_rect)
         for event in pygame.event.get():
             if event.type == DROPFILE:
                 image = pygame.image.load(event.file)
-                return image
-        screen.blit(text_image, text_rect)
+                return image, screen, game_settings
+            elif event.type == QUIT:
+                pygame.quit()
+                exit()
+        pygame.display.flip()
 
-
-def run_game(game: gl.Game, blur_image: pygame.Surface = None) -> None:
+def run_game(game: gl.Game, parameters: tuple) -> None:
     """
         Main func with game loop
     """
+    pygame.display.set_icon(pygame.image.load("images/hover_mine.png"))
     # Game sound optimization
-    game_settings = Settings(game.size[0], game.size[1], game.num_of_mines, 32, 32, 20, 192)
+    game_settings = parameters[2]
     # print(game_settings.)
     # Налаштовування вікна гри
     environ['SDL_VIDEO_CENTERED'] = '1'
-    flags = DOUBLEBUF
-    screen = pygame.display.set_mode((
-        game_settings.screen_width,
-        game_settings.screen_height - game_settings.extra_y / 3),
-        flags,
-        16)
-    print(screen.get_width(), game_settings.screen_width)
+    screen = parameters[1]
+    # print(screen.get_width(), game_settings.screen_width)
     clock = pygame.time.Clock()
 
     # Створення ігрових об'єктів
@@ -203,9 +208,13 @@ def run_game(game: gl.Game, blur_image: pygame.Surface = None) -> None:
                                game_settings.screen_width // 2, int(game_settings.screen_height // 2), 8)
     end_game = NewGameButton(game_settings, screen, 'lose',
                              game_settings.screen_width // 2, int(game_settings.screen_height // 2), 4)
+
+    success_game = NewGameButton(game_settings, screen, 'success', game_settings.screen_width // 2, game_settings.screen_height//2, 4)
+
     buttons_game_begin = Group()
     buttons_game_begin.add(start_game)
     buttons_game_begin.add(end_game)
+    buttons_game_begin.add(success_game)
     # Створюєм два дисплея: час та кількість мін
     clock_display = Display(game_settings, screen, game_settings.screen_width / 1.5, 20,
                             [0, 0, 0])
@@ -214,9 +223,9 @@ def run_game(game: gl.Game, blur_image: pygame.Surface = None) -> None:
                             [game_settings.mines // 100, (game_settings.mines // 10) % 10, game_settings.mines % 10])
 
     clock_display.change_icon(
-        Icon('images/clock.png', screen, game_settings, clock_display.rect1.x - 60, 0))
+        Icon('images/clock.png', screen, game_settings, clock_display.rect1.x - 60, 15))
     mines_display.change_icon(
-        Icon('images/mine_32px.png', screen, game_settings, mines_display.rect1.x - 40, mines_display.rect1.y))
+        Icon('images/flag64-1.png', screen, game_settings, mines_display.rect1.x - 60, 9))
 
     create_game_field(game_settings, screen, buttons)
     screen.fill(game_settings.bg_color)
@@ -226,42 +235,37 @@ def run_game(game: gl.Game, blur_image: pygame.Surface = None) -> None:
 
     # Game cycle
     while True:
-        # new_time = pygame.time.get_ticks() * 0.001
-        # frame_time = new_time - current_time
-        # current_time = new_time
-        # accumulator += frame_time
-        # print(current_time)
+        if game.end_game:
+            if game.game_won:
+                game_settings.game_won = True
+            game_settings.game_active = False
+            game_settings.first_time_play = False
+        event_result = event_handler(buttons, game_settings, mines_display, start_game, game, success_game)
+        if event_result:
+            game.do_action(event_result[0], event_result[1])
+            change_game_fields(buttons, game.player_board)
 
-        # while accumulator >= TIME_STEP:
+        # Update displays
+        clock_display.blit_display()
+        mines_display.blit_display()
 
-            if game.end_game:
-                game_settings.game_active = False
-                game_settings.first_time_play = False
-            event_result = event_handler(buttons, game_settings, mines_display, start_game, game)
-            if event_result:
-                game.do_action(event_result[0], event_result[1])
-                change_game_fields(buttons, game.player_board)
-
-            # Update displays
-            clock_display.blit_display()
-            mines_display.blit_display()
-
-            buttons.draw(screen)
-            buttons_hover(buttons, buttons_game_begin)
-            if not game_settings.game_active:
-                if game_settings.first_time_play:
-                    start_game.draw_me()
-                else:
-                    end_game.draw_me()
+        buttons.draw(screen)
+        buttons_hover(buttons, buttons_game_begin)
+        if not game_settings.game_active:
+            if game_settings.first_time_play:
+                start_game.draw_me()
+            elif game_settings.game_won:
+                success_game.draw_me()
             else:
-                if game_settings.frame_count % game_settings.frame_rate == 0:
-                    clock_display.display_plus_one()
+                end_game.draw_me()
+        else:
+            if game_settings.frame_count % game_settings.frame_rate == 0:
+                clock_display.display_plus_one()
 
-            # Лічильник кадрів
-            game_settings.frame_count += 1
-            clock.tick(game_settings.frame_rate)
-            pygame.display.flip()
-            # accumulator -= TIME_STEP
+        # Лічильник кадрів
+        game_settings.frame_count += 1
+        clock.tick(game_settings.frame_rate)
+        pygame.display.flip()
 
         # Оновлення екрану
 
@@ -269,4 +273,4 @@ def run_game(game: gl.Game, blur_image: pygame.Surface = None) -> None:
 # Play game
 if __name__ == '__main__':
     game_instance = gl.Game((18, 14), 40)
-    run_game(game_instance, load_image())
+    run_game(game_instance, load_image(game_instance))
